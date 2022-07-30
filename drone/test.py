@@ -55,7 +55,11 @@ class MinimalSubscriber(Node):
 
 def main(args=None):
     
+<<<<<<< HEAD
     print("asdasda")
+=======
+
+>>>>>>> bc3132788d894da69f0270f20b7757533e3e3070
     rclpy.init(args=args)
 
     minimal_subscriber = MinimalSubscriber()
