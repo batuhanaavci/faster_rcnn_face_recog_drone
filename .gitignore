@@ -2,4 +2,5 @@ frame/resized_1/
 frame/resized_2/
 frame/resized_3/
 frame/raw_data/
-
+augmentall/
+yolo_train/
