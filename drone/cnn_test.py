@@ -1,8 +1,10 @@
 from distutils.log import error
 from ftplib import error_temp
+from tkinter import Y
 import rclpy
 from rclpy.node import Node
 import cv2
+import math  
 
 from cv_bridge import CvBridge
 import time
@@ -16,16 +18,57 @@ from sensor_msgs.msg import Joy
 
 bridge = CvBridge()
 
+import numpy as np
 
 class PidController:
     def __init__(self):
-        self.Kp_y = -0.1
-        self.Kp_z = -0.6
-    def kp_controller(self, error):
-        error_z = float(error[1])/230
-        error_y = float(error[0])/130
+        self.Kp = 0.4
+        self.Kd = 0.6
+        self.normalized = []
+        self.refy = 0
+        self.refz = 0
+        self.Az = 0
+        self.Ay = 0
+        self.last_errz = 0
+        self.last_erry = 0
+        self.dt = 1
 
-        return (self.Kp_y * error_y, self.Kp_z * error_z)
+    def preprocess(self, keypoint):
+        
+        z = (keypoint['nose'][1] - 130)/130
+        y = (keypoint['nose'][0] - 260)/260
+        left_eye_z = (keypoint['left_eye'][1] - 130)/130
+        left_eye_y = (keypoint['left_eye'][0] - 260)/260
+        right_eye_z = (keypoint['right_eye'][1] - 130)/130
+        right_eye_y = (keypoint['right_eye'][0] - 260)/260
+        eye_dist = math.dist([left_eye_z, left_eye_y], [right_eye_z, right_eye_y])
+        eye_error = eye_dist - 0.03
+        eye_error = (eye_error - 0.25) / 0.25
+        return z,y, eye_error
+
+
+    def controller(self, target):
+        targetz,targety, eye_error = self.preprocess(target)
+        errz = targetz-self.refz
+        erry = targety-self.refy
+
+        self.Az += self.dt* (errz+self.last_errz)/2
+        Pz = errz * self.Kp
+        Dz = self.Kd*(errz - self.last_errz) / self.dt
+        uz = Pz + Dz
+        self.last_errz = errz
+
+        self.Ay += self.dt* (erry+self.last_erry)/2
+        Py = erry * self.Kp
+        Dy = self.Kd*(erry - self.last_erry) / self.dt
+        uy = Py + Dy
+        self.last_erry = erry
+
+        # uy = math.tanh(uy)
+        # uz = math.tanh(uz)
+
+        return uz,uy, eye_error
+
 
 
 
@@ -74,22 +117,29 @@ class MinimalSubscriber(Node):
         faces = self.detector.detect_faces(gray)
             
         if len(faces) > 0:
-            cv2.circle(cv_image,faces[0]['keypoints']['nose'],radius=10,color=(0, 0, 255), thickness=-1)
+            cv2.circle(cv_image,faces[0]['keypoints']['nose'],radius=5,color=(0, 0, 255), thickness=-1)
+            cv2.circle(cv_image,faces[0]['keypoints']['left_eye'],radius=5,color=(0, 0, 255), thickness=-1)
+            cv2.circle(cv_image,faces[0]['keypoints']['right_eye'],radius=5,color=(0, 0, 255), thickness=-1)
+
             cv2.line(cv_image,faces[0]['keypoints']['nose'],(230,130),color=(0, 0, 255), thickness=1)
             # cv2.putText(cv_image, str(faces[0]['confidence']), (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
             cv2.putText(cv_image, 'Guvenlik Acik'+str(self.pid_button), (10, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
-
+            target = faces[0]['keypoints']
             error_y = faces[0]['keypoints']['nose'][0]-230
             error_z = faces[0]['keypoints']['nose'][1]-130
             error_tuple = (error_y,error_z)
             cv2.putText(cv_image, str(error_tuple), (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
-            axis = self.PidController.kp_controller(error_tuple)
-            cv2.putText(cv_image, str(axis), (10, 200), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
-            self.twist.linear.y = axis[0]
-            self.twist.linear.z = axis[1]
-        else:
-            self.twist.linear.y = float(0)
-            self.twist.linear.z = float(0)
+            uz,uy, eye_dist = self.PidController.controller(target)
+            cv2.putText(cv_image, "{:.2f}".format(uz)+"---{:.2f}".format(uy), (10, 200), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (100, 255, 100), 1, cv2.LINE_AA)
+            cv2.putText(cv_image, "{:.2f}".format(eye_dist), (10, 210), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (100, 255, 100), 1, cv2.LINE_AA)
+
+            self.twist.linear.z = -uz
+            self.twist.linear.y = -uy
+        # else:
+        #     pass
+        #     self.twist.linear.y = float(0)
+        #     self.twist.linear.z = float(0)
+
         cv2.imshow("Detection",cv_image)
         cv2.waitKey(3)
 
