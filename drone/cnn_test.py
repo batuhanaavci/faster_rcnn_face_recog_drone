@@ -117,18 +117,22 @@ class MinimalSubscriber(Node):
         faces = self.detector.detect_faces(gray)
             
         if len(faces) > 0:
-            cv2.circle(cv_image,faces[0]['keypoints']['nose'],radius=5,color=(0, 0, 255), thickness=-1)
-            cv2.circle(cv_image,faces[0]['keypoints']['left_eye'],radius=5,color=(0, 0, 255), thickness=-1)
-            cv2.circle(cv_image,faces[0]['keypoints']['right_eye'],radius=5,color=(0, 0, 255), thickness=-1)
+            box_x, box_y, box_width, box_height = faces[0]['box']
+            box_center_x , box_center_y= ((box_x+int(box_width/2)), int((box_y+int(box_height/2))))
+            #cv2.circle(cv_image,faces[0]['keypoints']['nose'],radius=5,color=(0, 0, 255), thickness=-1)
+            #cv2.circle(cv_image,faces[0]['keypoints']['left_eye'],radius=5,color=(0, 0, 255), thickness=-1)
+            #cv2.circle(cv_image,faces[0]['keypoints']['right_eye'],radius=5,color=(0, 0, 255), thickness=-1)
+            cv2.rectangle(cv_image,(box_x,box_y),(box_x+box_width,box_y+box_height),(0,255,0), thickness=1)
 
-            cv2.line(cv_image,faces[0]['keypoints']['nose'],(230,130),color=(0, 0, 255), thickness=1)
+
+            cv2.line(cv_image,(box_center_x,box_center_y),(230,130),color=(0, 0, 255), thickness=-1)
             # cv2.putText(cv_image, str(faces[0]['confidence']), (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
             cv2.putText(cv_image, 'Guvenlik Acik'+str(self.pid_button), (10, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
             target = faces[0]['keypoints']
-            error_y = faces[0]['keypoints']['nose'][0]-230
-            error_z = faces[0]['keypoints']['nose'][1]-130
+            error_y = box_center_x-230
+            error_z = box_center_y-130
             error_tuple = (error_y,error_z)
-            cv2.putText(cv_image, str(error_tuple), (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
+            cv2.putText(cv_image, str(error_tuple), (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
             uz,uy, eye_dist = self.PidController.controller(target)
             cv2.putText(cv_image, "{:.2f}".format(uz)+"---{:.2f}".format(uy), (10, 200), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (100, 255, 100), 1, cv2.LINE_AA)
             cv2.putText(cv_image, "{:.2f}".format(eye_dist), (10, 210), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (100, 255, 100), 1, cv2.LINE_AA)
