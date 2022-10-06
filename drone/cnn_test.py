@@ -1,3 +1,4 @@
+from array import array
 from distutils.log import error
 from ftplib import error_temp
 from tkinter import Y
@@ -33,22 +34,22 @@ class PidController:
         self.last_erry = 0
         self.dt = 1
 
-    def preprocess(self, keypoint):
+    def preprocess(self, box):
         
-        z = (keypoint['nose'][1] - 130)/130
-        y = (keypoint['nose'][0] - 260)/260
-        left_eye_z = (keypoint['left_eye'][1] - 130)/130
-        left_eye_y = (keypoint['left_eye'][0] - 260)/260
-        right_eye_z = (keypoint['right_eye'][1] - 130)/130
-        right_eye_y = (keypoint['right_eye'][0] - 260)/260
-        eye_dist = math.dist([left_eye_z, left_eye_y], [right_eye_z, right_eye_y])
-        eye_error = eye_dist - 0.03
-        eye_error = (eye_error - 0.25) / 0.25
-        return z,y, eye_error
+        z = (box[1] - 130)/130
+        y = (box[0] - 260)/260
+        #left_eye_z = (keypoint['left_eye'][1] - 130)/130
+        #left_eye_y = (keypoint['left_eye'][0] - 260)/260
+        #right_eye_z = (keypoint['right_eye'][1] - 130)/130
+        #right_eye_y = (keypoint['right_eye'][0] - 260)/260
+        #eye_dist = math.dist([left_eye_z, left_eye_y], [right_eye_z, right_eye_y])
+        #eye_error = eye_dist - 0.03
+        #eye_error = (eye_error - 0.25) / 0.25
+        return z,y, #eye_error
 
 
     def controller(self, target):
-        targetz,targety, eye_error = self.preprocess(target)
+        targetz,targety = self.preprocess(target)
         errz = targetz-self.refz
         erry = targety-self.refy
 
@@ -67,7 +68,7 @@ class PidController:
         # uy = math.tanh(uy)
         # uz = math.tanh(uz)
 
-        return uz,uy, eye_error
+        return uz,uy, #eye_error
 
 
 
@@ -125,17 +126,17 @@ class MinimalSubscriber(Node):
             cv2.rectangle(cv_image,(box_x,box_y),(box_x+box_width,box_y+box_height),(0,255,0), thickness=1)
 
 
-            cv2.line(cv_image,(box_center_x,box_center_y),(230,130),color=(0, 0, 255), thickness=-1)
+            cv2.line(cv_image,(box_center_x,box_center_y),(230,130),color=(0, 0, 255), thickness=1)
             # cv2.putText(cv_image, str(faces[0]['confidence']), (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
             cv2.putText(cv_image, 'Guvenlik Acik'+str(self.pid_button), (10, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
-            target = faces[0]['keypoints']
+            target = np.array([box_center_x,box_center_y])
             error_y = box_center_x-230
             error_z = box_center_y-130
             error_tuple = (error_y,error_z)
             cv2.putText(cv_image, str(error_tuple), (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
-            uz,uy, eye_dist = self.PidController.controller(target)
+            uz,uy = self.PidController.controller(target)
             cv2.putText(cv_image, "{:.2f}".format(uz)+"---{:.2f}".format(uy), (10, 200), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (100, 255, 100), 1, cv2.LINE_AA)
-            cv2.putText(cv_image, "{:.2f}".format(eye_dist), (10, 210), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (100, 255, 100), 1, cv2.LINE_AA)
+            #cv2.putText(cv_image, "{:.2f}".format(eye_dist), (10, 210), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (100, 255, 100), 1, cv2.LINE_AA)
 
             self.twist.linear.z = -uz
             self.twist.linear.y = -uy
