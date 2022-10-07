@@ -139,7 +139,7 @@ class MinimalSubscriber(Node):
             #cv2.putText(cv_image, "{:.2f}".format(eye_dist), (10, 210), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (100, 255, 100), 1, cv2.LINE_AA)
 
             self.twist.linear.z = -uz
-            self.twist.linear.y = -uy
+            self.twist.angular.z = -uy
         # else:
         #     pass
         #     self.twist.linear.y = float(0)
