@@ -99,7 +99,9 @@ class MinimalSubscriber(Node):
         self.pid_button = 1
 
         self.PidController = PidController()
-    
+        self.center_box = np.array([230,130])  # center coordinates of the reference box (y,z)
+
+
     # def joy_callback(self, msg):
     #     self.pid_button = msg.buttons[5]
     #     msg.axes[4] = self.twist.linear.y
@@ -123,7 +125,8 @@ class MinimalSubscriber(Node):
             #cv2.circle(cv_image,faces[0]['keypoints']['nose'],radius=5,color=(0, 0, 255), thickness=-1)
             #cv2.circle(cv_image,faces[0]['keypoints']['left_eye'],radius=5,color=(0, 0, 255), thickness=-1)
             #cv2.circle(cv_image,faces[0]['keypoints']['right_eye'],radius=5,color=(0, 0, 255), thickness=-1)
-            cv2.rectangle(cv_image,(box_x,box_y),(box_x+box_width,box_y+box_height),(0,255,0), thickness=1)
+            cv2.rectangle(cv_image,(box_x,box_y),(box_x+box_width,box_y+box_height),(0,255,0), thickness=1)  # detected face
+            cv2.rectangle(cv_image,(self.center_box[0]-20,self.center_box[1]-20),(self.center_box[0]+20,self.center_box[1]+20),(255,0,0), thickness=1)  # ref_box  
 
 
             cv2.line(cv_image,(box_center_x,box_center_y),(230,130),color=(0, 0, 255), thickness=1)
