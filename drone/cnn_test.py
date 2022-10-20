@@ -42,8 +42,10 @@ class PidController:
         print(box)
         z = (box[1] - 130)/130
         y = (box[0] - 260)/260
-        x = (box[2] - 260)/260
-        print(x)
+        #print(x)
+        min_value = 25  # this is the minimum value of the distance, i.e. distance measured when the face is furthest away from drone.
+        x = ((box[2]+min_value) - 25)/25
+
         #left_eye_z = (keypoint['left_eye'][1] - 130)/130
         #left_eye_y = (keypoint['left_eye'][0] - 260)/260
         #right_eye_z = (keypoint['right_eye'][1] - 130)/130
