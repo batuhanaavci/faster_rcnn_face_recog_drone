@@ -25,7 +25,7 @@ class PidController:
     def __init__(self):
         self.Kp = 0.4
         self.Kd = 0.6
-        self.Kpx = 1
+        self.Kpx = 0.2
         self.normalized = []
         self.refy = 0
         self.refz = 0
