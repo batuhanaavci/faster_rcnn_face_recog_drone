@@ -41,7 +41,7 @@ class PidController:
         
         z = (box[1] - 130)/130
         y = (box[0] - 260)/260
-        x = (box[2] - 1600)/1600
+        x = (box[2] - 10000)/10000
         #left_eye_z = (keypoint['left_eye'][1] - 130)/130
         #left_eye_y = (keypoint['left_eye'][0] - 260)/260
         #right_eye_z = (keypoint['right_eye'][1] - 130)/130
@@ -159,14 +159,14 @@ class MinimalSubscriber(Node):
             error_tuple = (error_y,error_z,error_x)
             cv2.putText(cv_image, str(error_tuple), (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
             uz,uy, ux = self.PidController.controller(target)
-            cv2.putText(cv_image, "{:.2f}".format(uz)+"---{:.2f}".format(uy), (10, 200), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (100, 255, 100), 1, cv2.LINE_AA)
+            cv2.putText(cv_image, "{:.2f}".format(uz)+"---{:.2f}".format(uy)+"---{:.2f}".format(ux), (10, 200), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (100, 255, 100), 1, cv2.LINE_AA)
             #cv2.putText(cv_image, "{:.2f}".format(eye_dist), (10, 210), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (100, 255, 100), 1, cv2.LINE_AA)
             #cv2.putText(cv_image, 'X AXIS COMMAND'+str(ux), (50, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
 
             self.twist.linear.z = -uz
             self.twist.angular.z = -uy
             self.twist.linear.x -ux
-            cv2.putText(cv_image, 'twistX'+str(self.twist.linear.x), (50, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
+            #cv2.putText(cv_image, 'twistX'+str(self.twist.linear.x), (50, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
 
         # else:
         #     pass
