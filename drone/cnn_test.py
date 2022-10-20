@@ -25,6 +25,7 @@ class PidController:
     def __init__(self):
         self.Kp = 0.4
         self.Kd = 0.6
+        self.Kpx = 1
         self.normalized = []
         self.refy = 0
         self.refz = 0
@@ -38,10 +39,11 @@ class PidController:
         self.dt = 1
 
     def preprocess(self, box):
-        
+        print(box)
         z = (box[1] - 130)/130
         y = (box[0] - 260)/260
-        x = (box[2] - 10000)/10000
+        x = (box[2] - 260)/260
+        print(x)
         #left_eye_z = (keypoint['left_eye'][1] - 130)/130
         #left_eye_y = (keypoint['left_eye'][0] - 260)/260
         #right_eye_z = (keypoint['right_eye'][1] - 130)/130
@@ -56,7 +58,7 @@ class PidController:
         targetz,targety,targetx= self.preprocess(target)
         errz = targetz-self.refz
         erry = targety-self.refy
-        errx = targetx-self.refx
+        errx = targetx - self.refx
         
         self.Az += self.dt* (errz+self.last_errz)/2
         Pz = errz * self.Kp
@@ -71,7 +73,7 @@ class PidController:
         self.last_erry = erry
 
         self.Ax += self.dt* (errx+self.last_errx)/2
-        Px = errx * self.Kp
+        Px = errx * self.Kpx
         Dx = self.Kd*(errx - self.last_errx) / self.dt
         ux = Px + Dx
         self.last_errx = errx
@@ -138,34 +140,32 @@ class MinimalSubscriber(Node):
             box_x, box_y, box_width, box_height = faces[0]['box']
             box_center_x , box_center_y= ((box_x+int(box_width/2)), int((box_y+int(box_height/2))))
             face_area = box_height*box_width
-            ref_box_area = ((self.rbox_y+20)-(self.rbox_y-20))*((self.rbox_z+20)-(self.rbox_z-20))
+            ref_box_area = ((self.rbox_y+30)-(self.rbox_y-30))*((self.rbox_z+30)-(self.rbox_z-30))
             
-            #cv2.circle(cv_image,faces[0]['keypoints']['nose'],radius=5,color=(0, 0, 255), thickness=-1)
-            #cv2.circle(cv_image,faces[0]['keypoints']['left_eye'],radius=5,color=(0, 0, 255), thickness=-1)
-            #cv2.circle(cv_image,faces[0]['keypoints']['right_eye'],radius=5,color=(0, 0, 255), thickness=-1)
             cv2.rectangle(cv_image,(box_x,box_y),(box_x+box_width,box_y+box_height),(0,255,0), thickness=1)  # detected face
-            cv2.rectangle(cv_image,(self.rbox_y-20,self.rbox_z-20),(self.rbox_y+20,self.rbox_z+20),(255,0,0), thickness=1)  # ref_box  
-            #cv2.putText(cv_image, 'ref_box_area'+str(ref_box_area), (150, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
-            #cv2.putText(cv_image, 'face_area'+str(face_area), (50, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
-            
-
+            cv2.rectangle(cv_image,(box_center_x-30,box_center_y-30),(box_center_x+30,box_center_y+30),(255,0,0), thickness=1)  # ref_box  
             cv2.line(cv_image,(box_center_x,box_center_y),(230,130),color=(0, 0, 255), thickness=1)
-            # cv2.putText(cv_image, str(faces[0]['confidence']), (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
             cv2.putText(cv_image, 'Guvenlik Acik'+str(self.pid_button), (10, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
-            target = np.array([box_center_x,box_center_y, face_area])
+
             error_y = box_center_x-230
             error_z = box_center_y-130
-            error_x = face_area - ref_box_area 
-            error_tuple = (error_y,error_z,error_x)
+            d = (box_center_x-30) - box_x
+            error_tuple = (error_y,error_z,d)
+
+            target = np.array([box_center_x,box_center_y, d])
+
+            
             cv2.putText(cv_image, str(error_tuple), (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
-            uz,uy, ux = self.PidController.controller(target)
+            print('target',target)
+            uz,uy,ux = self.PidController.controller(target)
+            
             cv2.putText(cv_image, "{:.2f}".format(uz)+"---{:.2f}".format(uy)+"---{:.2f}".format(ux), (10, 200), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (100, 255, 100), 1, cv2.LINE_AA)
             #cv2.putText(cv_image, "{:.2f}".format(eye_dist), (10, 210), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (100, 255, 100), 1, cv2.LINE_AA)
             #cv2.putText(cv_image, 'X AXIS COMMAND'+str(ux), (50, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
 
             self.twist.linear.z = -uz
             self.twist.angular.z = -uy
-            self.twist.linear.x -ux
+            self.twist.linear.x = -ux
             #cv2.putText(cv_image, 'twistX'+str(self.twist.linear.x), (50, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
 
         # else:
