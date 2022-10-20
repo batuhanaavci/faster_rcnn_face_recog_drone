@@ -23,9 +23,13 @@ import numpy as np
 
 class PidController:
     def __init__(self):
-        self.Kp = 0.4
-        self.Kd = 0.6
-        self.Kpx = 0.2
+        self.Kpy = 0.5
+        self.Kdy = 0.3
+        self.Kpz = 0.4
+        self.Kdz = 0.5
+
+        self.Kpx = 0.5
+        self.Kdx = 0.4
         self.normalized = []
         self.refy = 0
         self.refz = 0
@@ -63,20 +67,20 @@ class PidController:
         errx = targetx - self.refx
         
         self.Az += self.dt* (errz+self.last_errz)/2
-        Pz = errz * self.Kp
-        Dz = self.Kd*(errz - self.last_errz) / self.dt
+        Pz = errz * self.Kpz
+        Dz = self.Kdz*(errz - self.last_errz) / self.dt
         uz = Pz + Dz
         self.last_errz = errz
 
         self.Ay += self.dt* (erry+self.last_erry)/2
-        Py = erry * self.Kp
-        Dy = self.Kd*(erry - self.last_erry) / self.dt
+        Py = erry * self.Kpy
+        Dy = self.Kdy*(erry - self.last_erry) / self.dt
         uy = Py + Dy
         self.last_erry = erry
 
         self.Ax += self.dt* (errx+self.last_errx)/2
         Px = errx * self.Kpx
-        Dx = self.Kd*(errx - self.last_errx) / self.dt
+        Dx = self.Kdx*(errx - self.last_errx) / self.dt
         ux = Px + Dx
         self.last_errx = errx
 
@@ -137,21 +141,21 @@ class MinimalSubscriber(Node):
         cv_image = cv2.resize(cv_image, (460, 259), interpolation = cv2.INTER_AREA)
         gray = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
         faces = self.detector.detect_faces(gray)
-            
+        _Kref = 20  # reference box constant, half of the reference box's one side
         if len(faces) > 0:
             box_x, box_y, box_width, box_height = faces[0]['box']
             box_center_x , box_center_y= ((box_x+int(box_width/2)), int((box_y+int(box_height/2))))
             face_area = box_height*box_width
-            ref_box_area = ((self.rbox_y+30)-(self.rbox_y-30))*((self.rbox_z+30)-(self.rbox_z-30))
+            ref_box_area = ((self.rbox_y+_Kref)-(self.rbox_y-_Kref))*((self.rbox_z+_Kref)-(self.rbox_z-_Kref))
             
             cv2.rectangle(cv_image,(box_x,box_y),(box_x+box_width,box_y+box_height),(0,255,0), thickness=1)  # detected face
-            cv2.rectangle(cv_image,(box_center_x-30,box_center_y-30),(box_center_x+30,box_center_y+30),(255,0,0), thickness=1)  # ref_box  
+            cv2.rectangle(cv_image,(box_center_x-_Kref,box_center_y-_Kref),(box_center_x+_Kref,box_center_y+_Kref),(255,0,0), thickness=1)  # ref_box  
             cv2.line(cv_image,(box_center_x,box_center_y),(230,130),color=(0, 0, 255), thickness=1)
             cv2.putText(cv_image, 'Guvenlik Acik'+str(self.pid_button), (10, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
 
             error_y = box_center_x-230
             error_z = box_center_y-130
-            d = (box_center_x-30) - box_x
+            d = (box_center_x-_Kref) - box_x
             error_tuple = (error_y,error_z,d)
 
             target = np.array([box_center_x,box_center_y, d])
