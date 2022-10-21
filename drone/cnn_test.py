@@ -190,9 +190,10 @@ class MinimalSubscriber(Node):
             self.Vy,self.Vz = self.PidController.face_velocity(target)
             cv2.putText(cv_image, "{:.2f}".format(self.Vy)+"---{:.2f}".format(self.Vz), (10, 240), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (100, 255, 100), 1, cv2.LINE_AA)
         if len(faces) <= 0 :
-            self.twist.angular.z = -((self.Vy+50) - 50)/50
+            uy2 = ((self.Vy+50) - 50)/50 # normalize command between -1 and 1
+            self.twist.angular.z = -uy2
 
-            cv2.putText(cv_image, "{:.2f}".format(self.Vy)+"---{:.2f}".format(self.Vz), (10, 200), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (100, 255, 100), 1, cv2.LINE_AA)
+            cv2.putText(cv_image, "{:.2f}".format(self.Vy)+"---{:.2f}".format(uy2), (10, 200), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (100, 255, 100), 1, cv2.LINE_AA)
             
 
         # else:
