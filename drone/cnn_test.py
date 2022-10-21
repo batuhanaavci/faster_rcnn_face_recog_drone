@@ -175,20 +175,16 @@ class MinimalSubscriber(Node):
             target = np.array([box_center_x,box_center_y, d])
             
             cv2.putText(cv_image, str(error_tuple), (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
-            #print('target',target)
             uz,uy,ux = self.PidController.controller(target)
             
             cv2.putText(cv_image, "{:.2f}".format(uz)+"---{:.2f}".format(uy)+"---{:.2f}".format(ux), (10, 200), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (100, 255, 100), 1, cv2.LINE_AA)
-            #cv2.putText(cv_image, "{:.2f}".format(eye_dist), (10, 210), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (100, 255, 100), 1, cv2.LINE_AA)
-            #cv2.putText(cv_image, 'X AXIS COMMAND'+str(ux), (50, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
 
             self.twist.linear.z = -uz
             self.twist.angular.z = -uy
             self.twist.linear.x = -ux
-            #cv2.putText(cv_image, 'twistX'+str(self.twist.linear.x), (50, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
         
             self.Vy,self.Vz = self.PidController.face_velocity(target)
-            cv2.putText(cv_image, "{:.2f}".format(self.Vy)+"---{:.2f}".format(self.Vz), (10, 240), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (100, 255, 100), 1, cv2.LINE_AA)
+            #cv2.putText(cv_image, "{:.2f}".format(self.Vy)+"---{:.2f}".format(self.Vz), (10, 240), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (100, 255, 100), 1, cv2.LINE_AA)
         if len(faces) <= 0 :
             uy2 = ((self.Vy+50) - 50)/50 # normalize command between -1 and 1
             self.twist.angular.z = -uy2
