@@ -27,7 +27,6 @@ class PidController:
         self.Kdy = 0.3
         self.Kpz = 0.4
         self.Kdz = 0.5
-
         self.Kpx = 0.7
         self.Kdx = 0.4
         self.normalized = []
@@ -46,22 +45,12 @@ class PidController:
         self.dt = 1
 
     def preprocess(self, box):
-        #print(box)
         z = (box[1] - 130)/130
         y = (box[0] - 260)/260
-        #print(x)
-        min_value = 25  # this is the minimum value of the distance, i.e. distance measured when the face is furthest away from drone.
+        min_value = 25  # this is      the minimum value of the distance, i.e. distance measured when the face is furthest away from drone.
         x = ((box[2]+min_value) - 25)/25
 
-        #left_eye_z = (keypoint['left_eye'][1] - 130)/130
-        #left_eye_y = (keypoint['left_eye'][0] - 260)/260
-        #right_eye_z = (keypoint['right_eye'][1] - 130)/130
-        #right_eye_y = (keypoint['right_eye'][0] - 260)/260
-        #eye_dist = math.dist([left_eye_z, left_eye_y], [right_eye_z, right_eye_y])
-        #eye_error = eye_dist - 0.03
-        #eye_error = (eye_error - 0.25) / 0.25
-        return z,y,x #eye_error
-
+        return z,y,x #normalized error
 
     def controller(self, target):
         targetz,targety,targetx= self.preprocess(target)
@@ -87,10 +76,7 @@ class PidController:
         ux = Px + Dx
         self.last_errx = errx
 
-        # uy = math.tanh(uy)
-        # uz = math.tanh(uz)
-
-        return uz,uy,ux #eye_error
+        return uz,uy,ux #controller output
     
     def face_velocity(self,target): 
         dt = 1 
@@ -145,13 +131,13 @@ class MinimalSubscriber(Node):
         if self.pid_button == 1:
             self.publisher_.publish(self.twist)
             self.get_logger().info('Publishing: "%s"' % self.twist)
+
     def detect_faces(self, img):
-       
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         faces=self.detector.detect_faces(gray)
-        return faces 
-    def listener_callback(self, msg):
+        return faces
 
+    def listener_callback(self, msg):
         cv_image = bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')
         cv_image = cv2.resize(cv_image, (460, 259), interpolation = cv2.INTER_AREA)
         faces = self.detect_faces(cv_image)
@@ -159,8 +145,6 @@ class MinimalSubscriber(Node):
         if len(faces) > 0:
             box_x, box_y, box_width, box_height = faces[0]['box']
             box_center_x , box_center_y= ((box_x+int(box_width/2)), int((box_y+int(box_height/2))))
-            face_area = box_height*box_width
-            ref_box_area = ((self.rbox_y+_Kref)-(self.rbox_y-_Kref))*((self.rbox_z+_Kref)-(self.rbox_z-_Kref))
             
             cv2.rectangle(cv_image,(box_x,box_y),(box_x+box_width,box_y+box_height),(0,255,0), thickness=1)  # detected face
             cv2.rectangle(cv_image,(box_center_x-_Kref,box_center_y-_Kref),(box_center_x+_Kref,box_center_y+_Kref),(255,0,0), thickness=1)  # ref_box  
@@ -183,7 +167,7 @@ class MinimalSubscriber(Node):
             self.twist.angular.z = -uy
             self.twist.linear.x = -ux
         
-            self.Vy,self.Vz = self.PidController.face_velocity(target)
+            self.Vy, self.Vz = self.PidController.face_velocity(target)
             #cv2.putText(cv_image, "{:.2f}".format(self.Vy)+"---{:.2f}".format(self.Vz), (10, 240), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (100, 255, 100), 1, cv2.LINE_AA)
         if len(faces) <= 0 :
             uy2 = ((self.Vy+50) - 50)/50 # normalize command between -1 and 1
