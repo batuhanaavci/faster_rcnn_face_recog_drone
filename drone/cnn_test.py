@@ -28,7 +28,7 @@ class PidController:
         self.Kpz = 0.4
         self.Kdz = 0.5
 
-        self.Kpx = 0.5
+        self.Kpx = 0.7
         self.Kdx = 0.4
         self.normalized = []
         self.refy = 0
@@ -40,10 +40,13 @@ class PidController:
         self.last_errz = 0
         self.last_erry = 0
         self.last_errx = 0
+        self.last_posy = 0
+        self.last_posz = 0
+        self.last_posx = 0
         self.dt = 1
 
     def preprocess(self, box):
-        print(box)
+        #print(box)
         z = (box[1] - 130)/130
         y = (box[0] - 260)/260
         #print(x)
@@ -84,16 +87,22 @@ class PidController:
         ux = Px + Dx
         self.last_errx = errx
 
-
-
-
-
         # uy = math.tanh(uy)
         # uz = math.tanh(uz)
 
         return uz,uy,ux #eye_error
+    
+    def face_velocity(self,target): 
+        dt = 1 
+        targety,targetz,targetx= target
+        
+        self.dY = (targety - self.last_posy) / dt
+        self.last_posy = targety
 
+        self.dZ = (targetz - self.last_posz) / dt
+        self.last_posz = targetz
 
+        return self.dY, self.dZ
 
 
 
@@ -125,6 +134,8 @@ class MinimalSubscriber(Node):
         self.center_box = np.array([230,130])  # center coordinates of the reference box (y,z)
         self.rbox_y = self.center_box[0]
         self.rbox_z = self.center_box[1]
+        self.Vy = 1
+        self.Vz = 1
     # def joy_callback(self, msg):
     #     self.pid_button = msg.buttons[5]
     #     msg.axes[4] = self.twist.linear.y
@@ -134,13 +145,16 @@ class MinimalSubscriber(Node):
         if self.pid_button == 1:
             self.publisher_.publish(self.twist)
             self.get_logger().info('Publishing: "%s"' % self.twist)
-
+    def detect_faces(self, img):
+       
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        faces=self.detector.detect_faces(gray)
+        return faces 
     def listener_callback(self, msg):
 
         cv_image = bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')
         cv_image = cv2.resize(cv_image, (460, 259), interpolation = cv2.INTER_AREA)
-        gray = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
-        faces = self.detector.detect_faces(gray)
+        faces = self.detect_faces(cv_image)
         _Kref = 20  # reference box constant, half of the reference box's one side
         if len(faces) > 0:
             box_x, box_y, box_width, box_height = faces[0]['box']
@@ -159,10 +173,9 @@ class MinimalSubscriber(Node):
             error_tuple = (error_y,error_z,d)
 
             target = np.array([box_center_x,box_center_y, d])
-
             
             cv2.putText(cv_image, str(error_tuple), (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
-            print('target',target)
+            #print('target',target)
             uz,uy,ux = self.PidController.controller(target)
             
             cv2.putText(cv_image, "{:.2f}".format(uz)+"---{:.2f}".format(uy)+"---{:.2f}".format(ux), (10, 200), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (100, 255, 100), 1, cv2.LINE_AA)
@@ -173,6 +186,14 @@ class MinimalSubscriber(Node):
             self.twist.angular.z = -uy
             self.twist.linear.x = -ux
             #cv2.putText(cv_image, 'twistX'+str(self.twist.linear.x), (50, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
+        
+            self.Vy,self.Vz = self.PidController.face_velocity(target)
+            cv2.putText(cv_image, "{:.2f}".format(self.Vy)+"---{:.2f}".format(self.Vz), (10, 240), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (100, 255, 100), 1, cv2.LINE_AA)
+        if len(faces) <= 0 :
+            self.twist.angular.z = -((self.Vy+50) - 50)/50
+
+            cv2.putText(cv_image, "{:.2f}".format(self.Vy)+"---{:.2f}".format(self.Vz), (10, 200), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (100, 255, 100), 1, cv2.LINE_AA)
+            
 
         # else:
         #     pass
