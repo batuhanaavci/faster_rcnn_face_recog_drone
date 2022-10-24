@@ -4,3 +4,4 @@ frame/resized_3/
 frame/raw_data/
 augmentall/
 yolo_train/
+training/data
