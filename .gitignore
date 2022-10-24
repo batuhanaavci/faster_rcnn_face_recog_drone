@@ -5,3 +5,5 @@ frame/raw_data/
 augmentall/
 yolo_train/
 training/data
+ros/yolov2_vgg19_aug.mat
+ros/resnet50_224x224.mat
