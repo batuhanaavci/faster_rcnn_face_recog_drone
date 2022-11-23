@@ -22,15 +22,15 @@ frame = count-1;
 
 while 1
     pause(delaytime);
-    disp(delaytime)
+    
     if state == 2
+        disp(delaytime)
         imgMsg = receive(imgSub,10);
         img = rosReadImage(imgMsg);
-        %imshow(img)
-        %subImage = img(24:3:695, 32:4:927,:); %224x224x3 image
+        
         imwrite(img,folder+sprintf("%05d",frame)+".jpg");
         frame=frame+1;
-        if frame >= 150
+        if frame >= 1000
             mkdir ("frame/", [int2str(foldercount)]);
             folder = ("frame/" + [int2str(foldercount)] + "/");
             files = dir(folder);
@@ -47,8 +47,8 @@ function joyCallback(joyData)
     global button;
     button1 = joyData.buttons(1); % joystick mavi buton : kaydi baslat
     button2 = joyData.buttons(2); % joystick yesil buton : kaydi durdur
-    button3 = joyData.buttons(3); % joystick kirmizi buton : 1 sn'de bir foto kaydet
-    button4 = joyData.buttons(4); % joystick sari buton : 10 sn'de bir foto kaydet
+    button3 = joyData.buttons(3); % joystick kirmizi buton : 0.1 sn'de bir foto kaydet
+    button4 = joyData.buttons(4); % joystick sari buton : 1 sn'de bir foto kaydet
     global state;
     global delaytime;
     switch state
@@ -66,9 +66,9 @@ function joyCallback(joyData)
             end
     end
     if button3 == 1
-        delaytime = 1;
+        delaytime = 0.1;
     end
     if button4 == 1
-        delaytime = 10;
+        delaytime = 1;
     end
 end
