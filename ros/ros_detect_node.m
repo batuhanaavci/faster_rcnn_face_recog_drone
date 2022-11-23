@@ -7,14 +7,12 @@ dataMsg = ros2message(dataPub);
 pause(0.5)
 imgMsg = receive(imgSub,10);
 img = rosReadImage(imgMsg);
-% p1 = imshow(img);
 
 while 1
 
     pause(0.01);
     imgMsg = receive(imgSub,10);
     img = rosReadImage(imgMsg);
-%     subImage = img(24:3:695, 32:4:927,:); %224x224x3 image
     subImage = imresize(img,[224 224]);
     [faces.boxes,faces.scores,faces.labels] = detect(detector,subImage);
     
@@ -27,10 +25,5 @@ while 1
     dataMsg.data = faces_data;
     send(dataPub,dataMsg)
 
-%     detectedI = insertObjectAnnotation(img,'Rectangle',faces.boxes,strcat(string(faces.labels),{' - '},num2str(face.scores)));
-%     set(p1, 'CData', detectedI);
-
-    %subImage = img(24:3:695, 32:4:927,:); %224x224x3 image
 end
 
-funct
