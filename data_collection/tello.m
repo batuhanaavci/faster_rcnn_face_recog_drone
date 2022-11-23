@@ -16,7 +16,7 @@ global button;
 global delaytime;
 global state;
 state = 1;
-delaytime = 1;
+%delaytime = 1;
 
 frame = count-1;
 
@@ -51,6 +51,7 @@ function joyCallback(joyData)
     button4 = joyData.buttons(4); % joystick sari buton : 1 sn'de bir foto kaydet
     global state;
     global delaytime;
+    
     switch state
         case 1 %off 
             if button1 ==1
@@ -67,8 +68,9 @@ function joyCallback(joyData)
     end
     if button3 == 1
         delaytime = 0.1;
-    end
-    if button4 == 1
+    elseif button4 == 1
         delaytime = 1;
+    else
+        delaytime = 0.1;
     end
 end
