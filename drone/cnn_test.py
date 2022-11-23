@@ -48,15 +48,15 @@ class PidController:
     def preprocess(self, box):
         z = (box[1] - self.imgHeightCenter)/self.imgHeightCenter
         y = (box[0] - self.imgWidthCenter)/self.imgWidthCenter
-        min_value = 25  # this is      the minimum value of the distance, i.e. distance measured when the face is furthest away from drone.
+        min_value = 25  # this is the minimum value of the distance, i.e. distance measured when the face is furthest away from drone.
         x = ((box[2]+min_value) - 25)/25
 
         return z,y,x #normalized error
 
     def controller(self, target):
         targetz,targety,targetx= self.preprocess(target)
-        errz = targetz-self.refz
-        erry = targety-self.refy
+        errz = targetz - self.refz
+        erry = targety - self.refy
         errx = targetx - self.refx
         
         self.Az += self.dt* (errz+self.last_errz)/2
@@ -78,7 +78,7 @@ class PidController:
         self.last_errx = errx
 
         return uz,uy,ux #controller output
-    
+
     def face_velocity(self,target): 
         dt = 1 
         targety,targetz,targetx= target
@@ -90,7 +90,6 @@ class PidController:
         self.last_posz = targetz
 
         return self.dY, self.dZ
-
 
 
 class MinimalSubscriber(Node):
@@ -134,7 +133,6 @@ class MinimalSubscriber(Node):
         self.imgWidthCenter = self.imgWidth/2
         self.imgHeightCenter = self.imgHeight/2
 
-
         self.center_box = np.array([self.imgHeightCenter, self.imgWidthCenter])  # center coordinates of the reference box (y,z)
         self.rbox_y = self.center_box[0]
         self.rbox_z = self.center_box[1]
@@ -147,19 +145,12 @@ class MinimalSubscriber(Node):
         self.berkant = 0
         self.face_to_follow = None
 
-
     def faces_callback(self, msg):
         faces_data = json.loads(msg.data)
         if type(faces_data['labels']) == str:
             self.faces = {}
             self.faces[faces_data['labels']] = {'box':faces_data['boxes'] , 'score':faces_data['scores']}
-            # self.faces[1] = dict()
-            # self.faces[1]['label'] = faces_data['labels']
-            # self.faces[1]['box'] = faces_data['boxes']
-            # self.faces[1]['score'] = faces_data['scores']
-            # print('faces',self.faces)
-            
-            
+
         elif type(faces_data['labels']) == list:
             if len(faces_data['labels']) == 0:
                 self.faces = {}
@@ -170,9 +161,7 @@ class MinimalSubscriber(Node):
                 for label in faces_data['labels']:
                     self.faces[label] = {'box':faces_data['boxes'][faces_data['labels'].index(label)] , 'score':faces_data['scores'][faces_data['labels'].index(label)]}
             
-                # print('2 face  detected:',self.faces)
 
-        # self.get_logger().info('I heard: "%s"' % str(self.faces))
     def joy_callback(self, msg):
         self.auto = msg.buttons[5]
 
@@ -185,55 +174,45 @@ class MinimalSubscriber(Node):
         elif msg.buttons[3]:
             self.face_to_follow = 'Muhammed'
 
-
-
     def timmer_callback(self):
         if self.auto == 1:
             self.publisher_.publish(self.twist)
-            # self.get_logger().info('Publishing: "%s"' % self.twist)
-
-
 
     def listener_callback(self, msg):
         cv_image = bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')
         cv2.putText(cv_image, 'Face to be Tracked:'+str(self.face_to_follow), (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
         cv2.putText(cv_image, 'Safety Armed'+str(self.auto==1), (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
-          # reference box constant, half of the reference box's one side
-        # print('faces count',len(self.faces))
-        
+
         if len(self.faces) >0:
             
             for face in self.faces:
 
-                box_x, box_y, box_width, box_height = self.faces[face]['box']
-                box_center_x , box_center_y= ((box_x+int(box_width/2)), int((box_y+int(box_height/2))))
-                cv2.rectangle(cv_image,(box_x,box_y),(box_x+box_width,box_y+box_height),(0,255,0), thickness=1)  # detected face
-                cv2.putText(cv_image, face, (box_x, box_y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 150, 150), 1, cv2.LINE_AA)
+                box_y, box_z, box_width, box_height = self.faces[face]['box']
+                box_center_y , box_center_z= ((box_y+int(box_width/2)), int((box_z+int(box_height/2))))
+                cv2.rectangle(cv_image,(box_y,box_z),(box_y+box_width,box_z+box_height),(0,255,0), thickness=1)  # detected face
+                cv2.putText(cv_image, face, (box_y, box_z), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 150, 150), 1, cv2.LINE_AA)
 
-            
             if self.auto == 1 and self.face_to_follow != None:
-                
-                
                 
                 if self.face_to_follow in self.faces:
                     print('face detected')
-                    box_x, box_y, box_width, box_height = self.faces[self.face_to_follow]['box']
-                    box_center_x , box_center_y= ((box_x+int(box_width/2)), int((box_y+int(box_height/2))))
+                    box_y, box_z, box_width, box_height = self.faces[self.face_to_follow]['box']
+                    box_center_y , box_center_z= ((box_y+int(box_width/2)), int((box_z+int(box_height/2))))
                     
-                    cv2.rectangle(cv_image,(box_x,box_y),(box_x+box_width,box_y+box_height),(0,255,0), thickness=1)  # detected face
-                    cv2.rectangle(cv_image,(box_center_x-self._Kref,box_center_y-self._Kref),(box_center_x+self._Kref,box_center_y+self._Kref),(255,0,0), thickness=1)  # ref_box
-                    cv2.line(cv_image,(box_center_x,box_center_y),(480,360),color=(0, 0, 255), thickness=1)
-                    error_y = box_center_x-self.imgWidthCenter
-                    error_z = box_center_y-self.imgHeightCenter
-                    d = (box_center_x-self._Kref) - box_x
+                    cv2.rectangle(cv_image,(box_y,box_z),(box_y+box_width,box_z+box_height),(0,255,0), thickness=1)  # detected face
+                    cv2.rectangle(cv_image,(box_center_y-self._Kref,box_center_z-self._Kref),(box_center_y+self._Kref,box_center_z+self._Kref),(255,0,0), thickness=1)  # ref_box
+                    cv2.line(cv_image,(box_center_y,box_center_z),(480,360),color=(0, 0, 255), thickness=1)
+                    error_y = box_center_y-self.imgWidthCenter
+                    error_z = box_center_z-self.imgHeightCenter
+                    d = (box_center_y-self._Kref) - box_y
                     error_tuple = (error_y,error_z,d)
-                    target = np.array([box_center_x,box_center_y, d])
+                    target = np.array([box_center_y,box_center_z, d])
 
                     cv2.putText(cv_image, str(error_tuple), (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
                     cv2.putText(cv_image, str(face), (10, 175), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
                     uz,uy,ux = self.PidController.controller(target)
                     cv2.putText(cv_image, "{:.2f}".format(uz)+"---{:.2f}".format(uy)+"---{:.2f}".format(ux), (10, 200), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (100, 255, 100), 1, cv2.LINE_AA)
-                    print('asdad')
+                    
                     self.twist.linear.z = -uz
                     self.twist.angular.z = -uy
                     self.twist.linear.x = -ux
@@ -246,54 +225,6 @@ class MinimalSubscriber(Node):
 
         cv2.imshow("Detection",cv_image)
         cv2.waitKey(3)
-            # if face_to_detect in self.faces:
-
-            #     for face in self.faces:
-
-            #         box_x, box_y, box_width, box_height = self.faces[face]['box']
-            #         box_center_x , box_center_y= ((box_x+int(box_width/2)), int((box_y+int(box_height/2))))
-                
-            #         cv2.rectangle(cv_image,(box_x,box_y),(box_x+box_width,box_y+box_height),(0,255,0), thickness=1)  # detected face
-            #         cv2.rectangle(cv_image,(box_center_x-self._Kref,box_center_y-self._Kref),(box_center_x+self._Kref,box_center_y+self._Kref),(255,0,0), thickness=1)  # ref_box  
-            #         cv2.line(cv_image,(box_center_x,box_center_y),(360,480),color=(0, 0, 255), thickness=1)
-                    
-
-            #         error_y = box_center_x-self.imgWidthCenter
-            #         error_z = box_center_y-self.imgHeightCenter
-            #         d = (box_center_x-self._Kref) - box_x
-            #         error_tuple = (error_y,error_z,d)
-
-            #         target = np.array([box_center_x,box_center_y, d])
-                
-            #         cv2.putText(cv_image, str(error_tuple), (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
-            #         cv2.putText(cv_image, str(self.faces[face]['label']), (10, 175), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1, cv2.LINE_AA)
-            #         uz,uy,ux = self.PidController.controller(target)
-                
-            #         cv2.putText(cv_image, "{:.2f}".format(uz)+"---{:.2f}".format(uy)+"---{:.2f}".format(ux), (10, 200), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (100, 255, 100), 1, cv2.LINE_AA)
-
-            #         self.twist.linear.z = -uz
-            #         self.twist.angular.z = -uy
-            #         self.twist.linear.x = -ux
-
-                # self.Vy, self.Vz = self.PidController.face_velocity(target)
-            #cv2.putText(cv_image, "{:.2f}".format(self.Vy)+"---{:.2f}".format(self.Vz), (10, 240), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (100, 255, 100), 1, cv2.LINE_AA)
-        # if len(faces) <= 0 :
-        #     uy2 = ((self.Vy+50) - 50)/50 # normalize command between -1 and 1
-        #     self.twist.angular.z = -uy2
-
-        #     cv2.putText(cv_image, "{:.2f}".format(self.Vy)+"---{:.2f}".format(uy2), (10, 200), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (100, 255, 100), 1, cv2.LINE_AA)
-            
-
-        # else:
-        #     pass
-        #     self.twist.linear.y = float(0)
-        #     self.twist.linear.z = float(0)
-
-
-
-    # def test(self):
-    #     data = pd.DataFrame(np.random.randn(20, 2), columns=['a', 'b'])
-    #     return data
 
 
 def main(args=None):
@@ -303,7 +234,6 @@ def main(args=None):
     rclpy.spin(minimal_subscriber)
     minimal_subscriber.destroy_node()
     rclpy.shutdown()
-
 
 if __name__ == '__main__':
 
