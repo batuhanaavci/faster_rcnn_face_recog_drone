@@ -10,6 +10,8 @@ from sensor_msgs.msg import Image
 
 from geometry_msgs.msg import Twist
 from std_msgs.msg import String
+from std_msgs.msg import Float32
+import random
  
 from sensor_msgs.msg import Joy
 
@@ -112,6 +114,7 @@ class MinimalSubscriber(Node):
             'joy',
             self.joy_callback,
             10)
+        
         self.joy_sub  # prevent unused variable warning
         self.faces_sub
         self.faces_data = {}
@@ -119,9 +122,29 @@ class MinimalSubscriber(Node):
         self.faces_new = {}
 
         self.publisher_ = self.create_publisher(Twist, 'cmd_vel', 10)
+        self.error_angular_z_publisher = self.create_publisher(Float32, 'error_angular_z', 10)
+        self.error_linear_z_publisher = self.create_publisher(Float32, 'error_linear_z', 10)
+        self.error_linear_x_publisher = self.create_publisher(Float32, 'error_linear_x', 10)
+
+        self.ref_angular_z_publisher = self.create_publisher(Float32, 'ref_angular_z', 10)
+        self.ref_linear_z_publisher = self.create_publisher(Float32, 'ref_linear_z', 10)
+        self.ref_linear_x_publisher = self.create_publisher(Float32, 'ref_linear_x', 10)
+
         self.subscription  # prevent unused variable warning
         self.publisher_
+        self.error_angular_z_publisher 
+        self.error_linear_z_publisher 
+        self.error_linear_x_publisher 
+
         self.twist = Twist()
+        self.error_angular_z = Float32()
+        self.error_linear_z = Float32()
+        self.error_linear_x = Float32()
+        self.ref_angular_z = Float32()
+        self.ref_linear_z = Float32()
+        self.ref_linear_x = Float32()
+
+
         timer_period = 0.01  # seconds
         self.timer = self.create_timer(timer_period, self.timmer_callback)
         self.pid_button = 1
@@ -161,7 +184,6 @@ class MinimalSubscriber(Node):
                 for label in faces_data['labels']:
                     self.faces[label] = {'box':faces_data['boxes'][faces_data['labels'].index(label)] , 'score':faces_data['scores'][faces_data['labels'].index(label)]}
             
-
     def joy_callback(self, msg):
         self.auto = msg.buttons[5]
 
@@ -170,19 +192,34 @@ class MinimalSubscriber(Node):
         elif msg.buttons[1]:
             self.face_to_follow = 'Batuhan'
         elif msg.buttons[2]:
-            self.face_to_follow = 'Damla'
+            self.face_to_follow = 'Yusuf'
         elif msg.buttons[3]:
             self.face_to_follow = 'Muhammed'
-
+    
     def timmer_callback(self):
         if self.auto == 1:
             self.publisher_.publish(self.twist)
+            
+            
+            
+            self.error_angular_z_publisher.publish(self.error_angular_z)
+            self.error_linear_z_publisher.publish(self.error_linear_z)
+            self.error_linear_x_publisher.publish(self.error_linear_x)
+            self.ref_angular_z_publisher.publish(self.ref_angular_z)
+            self.ref_linear_z_publisher.publish(self.ref_linear_z)
+            self.ref_linear_x_publisher.publish(self.ref_linear_x)
 
     def listener_callback(self, msg):
         cv_image = bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')
         cv2.putText(cv_image, 'Face to be Tracked:'+str(self.face_to_follow), (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
         cv2.putText(cv_image, 'Safety Armed'+str(self.auto==1), (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
-
+        
+        self.error_angular_z.data = float(random.randint(-9,0))
+        self.error_linear_z.data = float(random.randint(3,1957))
+        self.error_linear_x.data = float(random.randint(2,1586))
+        
+        
+        
         if len(self.faces) >0:
             
             for face in self.faces:
@@ -217,6 +254,15 @@ class MinimalSubscriber(Node):
                     self.twist.angular.z = -uy
                     self.twist.linear.x = -ux
 
+                    #self.error_angular_z = error_y
+                    #self.error_linear_z = error_z
+                    #self.error_linear_x = d
+
+                    self.ref_angular_z = self.imgWidthCenter
+                    self.ref_linear_z = self.imgHeightCenter
+                    self.ref_linear_x = box_y
+
+                    
                 else:
                     print(str(face),"'s face not detected")
                     
