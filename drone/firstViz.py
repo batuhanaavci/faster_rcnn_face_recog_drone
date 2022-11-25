@@ -36,29 +36,34 @@ class ErrorSubscriber(Node):
         self.arr_err_ang_z = []
         self.arr_err_lin_z = []
         self.arr_err_lin_x = []
+        
         self.chart_ang_z = st.line_chart([])
-        self.chart_lin_z = st.line_chart([])
-        self.chart_lin_x = st.line_chart([])
+        self.chart_lin_z = st.line_chart(None)
+        self.chart_lin_x = st.line_chart(None)
 
 
 
     def error_angular_z_callback(self,msg):
         self.error_angular_z = msg.data
         self.arr_err_ang_z.append(self.error_angular_z) 
-        np_error = np.array(self.arr_err_ang_z)
-        self.chart_ang_z.add_rows(np_error)
+        np_error_ang_z = np.array(self.arr_err_ang_z)
+        self.chart_ang_z.add_rows(np_error_ang_z)
+        pd.DataFrame(np_error_ang_z).to_csv('error_angular_z.csv')
 
     def error_linear_z_callback(self,msg):
         self.error_linear_z = msg.data
         self.arr_err_lin_z.append(self.error_linear_z) 
-        np_error = np.array(self.arr_err_lin_z)
-        self.chart_lin_z.add_rows(np_error)
-    
+        np_error_lin_z = np.array(self.arr_err_lin_z)
+        self.chart_lin_z.add_rows(np_error_lin_z)
+        pd.DataFrame(np_error_lin_z).to_csv('error_linear_z.csv')
+
     def error_linear_x_callback(self,msg):
         self.error_linear_x = msg.data
         self.arr_err_lin_x.append(self.error_linear_x) 
-        np_error = np.array(self.arr_err_lin_x)
-        self.chart_lin_x.add_rows(np_error)
+        np_error_lin_x = np.array(self.arr_err_lin_x)
+        self.chart_lin_x.add_rows(np_error_lin_x)
+        pd.DataFrame(np_error_lin_x).to_csv('error_linear_x.csv')
+
    
         
 
@@ -68,6 +73,7 @@ def main(args=None):
     error_subscriber = ErrorSubscriber()
 
     rclpy.spin(error_subscriber)
+
     error_subscriber.destroy_node()
     rclpy.shutdown()
 
@@ -75,9 +81,6 @@ if __name__ == '__main__':
 
 
     main()
-
-
-
 
 
 
