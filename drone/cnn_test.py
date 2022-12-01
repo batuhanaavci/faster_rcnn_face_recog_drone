@@ -214,9 +214,6 @@ class MinimalSubscriber(Node):
         cv2.putText(cv_image, 'Face to be Tracked:'+str(self.face_to_follow), (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
         cv2.putText(cv_image, 'Safety Armed'+str(self.auto==1), (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
         
-        self.error_angular_z.data = float(random.randint(-9,0))
-        self.error_linear_z.data = float(random.randint(3,1957))
-        self.error_linear_x.data = float(random.randint(2,1586))
         
         
         
@@ -254,9 +251,9 @@ class MinimalSubscriber(Node):
                     self.twist.angular.z = -uy
                     self.twist.linear.x = -ux
 
-                    #self.error_angular_z = error_y
-                    #self.error_linear_z = error_z
-                    #self.error_linear_x = d
+                    self.error_angular_z.data = error_y
+                    self.error_linear_z.data = error_z
+                    self.error_linear_x.data = d
 
                     self.ref_angular_z = self.imgWidthCenter
                     self.ref_linear_z = self.imgHeightCenter
