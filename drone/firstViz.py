@@ -14,58 +14,17 @@ import matplotlib.pyplot as plt
 class ErrorSubscriber(Node):
     def __init__(self):
         super().__init__('error_subscriber')
-        self.error_angular_z_subscription = self.create_subscription(
+        self.test_subscription = self.create_subscription(
             Float32,
-            'error_angular_z',
-            self.error_angular_z_callback,
-            10)
-        self.error_linear_z_subscription = self.create_subscription(
-            Float32,
-            'error_linear_z',
-            self.error_linear_z_callback,
-            10)
-        self.error_linear_x_subscription = self.create_subscription(
-            Float32,
-            'error_linear_x',
-            self.error_linear_x_callback,
-            10)
-        
-        self.error_angular_z_subscription # prevent unused variable warning
-        self.error_linear_z_subscription
-        self.error_linear_x_subscription
-        self.arr_err_ang_z = []
-        self.arr_err_lin_z = []
-        self.arr_err_lin_x = []
-        
-        self.chart_ang_z = st.line_chart([])
-        self.chart_lin_z = st.line_chart(None)
-        self.chart_lin_x = st.line_chart(None)
+            'test_publisher',
+            self.test_callback,
+            10
+        )
 
+        self.test_subscription
 
-
-    def error_angular_z_callback(self,msg):
-        self.error_angular_z = msg.data
-        self.arr_err_ang_z.append(self.error_angular_z) 
-        np_error_ang_z = np.array(self.arr_err_ang_z)
-        self.chart_ang_z.add_rows(np_error_ang_z)
-        pd.DataFrame(np_error_ang_z).to_csv('error_angular_z.csv')
-
-    def error_linear_z_callback(self,msg):
-        self.error_linear_z = msg.data
-        self.arr_err_lin_z.append(self.error_linear_z) 
-        np_error_lin_z = np.array(self.arr_err_lin_z)
-        self.chart_lin_z.add_rows(np_error_lin_z)
-        pd.DataFrame(np_error_lin_z).to_csv('error_linear_z.csv')
-
-    def error_linear_x_callback(self,msg):
-        self.error_linear_x = msg.data
-        self.arr_err_lin_x.append(self.error_linear_x) 
-        np_error_lin_x = np.array(self.arr_err_lin_x)
-        self.chart_lin_x.add_rows(np_error_lin_x)
-        pd.DataFrame(np_error_lin_x).to_csv('error_linear_x.csv')
-
-   
-        
+    def test_callback(self,msg):
+        self.get_logger().info('I heard: "%s"' % msg.data)
 
 def main(args=None):
     
