@@ -126,10 +126,6 @@ class MinimalSubscriber(Node):
         self.error_linear_z_publisher = self.create_publisher(Float32, 'error_linear_z', 10)
         self.error_linear_x_publisher = self.create_publisher(Float32, 'error_linear_x', 10)
 
-        self.ref_angular_z_publisher = self.create_publisher(Float32, 'ref_angular_z', 10)
-        self.ref_linear_z_publisher = self.create_publisher(Float32, 'ref_linear_z', 10)
-        self.ref_linear_x_publisher = self.create_publisher(Float32, 'ref_linear_x', 10)
-
         self.subscription  # prevent unused variable warning
         self.publisher_
         self.error_angular_z_publisher 
@@ -140,9 +136,6 @@ class MinimalSubscriber(Node):
         self.error_angular_z = Float32()
         self.error_linear_z = Float32()
         self.error_linear_x = Float32()
-        self.ref_angular_z = Float32()
-        self.ref_linear_z = Float32()
-        self.ref_linear_x = Float32()
 
 
         timer_period = 0.01  # seconds
@@ -200,14 +193,10 @@ class MinimalSubscriber(Node):
         if self.auto == 1:
             self.publisher_.publish(self.twist)
             
-            
-            
             self.error_angular_z_publisher.publish(self.error_angular_z)
             self.error_linear_z_publisher.publish(self.error_linear_z)
             self.error_linear_x_publisher.publish(self.error_linear_x)
-            self.ref_angular_z_publisher.publish(self.ref_angular_z)
-            self.ref_linear_z_publisher.publish(self.ref_linear_z)
-            self.ref_linear_x_publisher.publish(self.ref_linear_x)
+
 
     def listener_callback(self, msg):
         cv_image = bridge.imgmsg_to_cv2(msg, desired_encoding='passthrough')
@@ -254,10 +243,6 @@ class MinimalSubscriber(Node):
                     self.error_angular_z.data = error_y
                     self.error_linear_z.data = error_z
                     self.error_linear_x.data = d
-
-                    self.ref_angular_z = self.imgWidthCenter
-                    self.ref_linear_z = self.imgHeightCenter
-                    self.ref_linear_x = box_y
 
                     
                 else:

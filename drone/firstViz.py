@@ -8,7 +8,7 @@ from rclpy.node import Node
 from std_msgs.msg import Float32
 from rclpy.node import Node
 import matplotlib.pyplot as plt
-
+from matplotlib.animation import FuncAnimation
 
 
 class ErrorSubscriber(Node):
@@ -22,9 +22,28 @@ class ErrorSubscriber(Node):
         )
 
         self.test_subscription
-
+    def animate(i):
+            x = self.msg_error # assigning 'Time' column to x variable
+            y = np.zeros() # assigning 'HRR' column to y variable
+            
+            plt.cla() # clear axis after plotting individual lines
+            plt.plot(x, y) # selecting the x and y variables to plot
+            plt.xlabel('Time (s)') # label x axis
+            plt.ylabel('HRR (kW)') # label y axis
+            plt.title('HRR Graph')
+        
+    
+    
+    
     def test_callback(self,msg):
         self.get_logger().info('I heard: "%s"' % msg.data)
+        self.msg_error = msg.data
+        ani = FuncAnimation(plt.gcf(), animate, interval = 200, frames = 500, repeat = False)
+
+        plt.tight_layout() # adds padding to the graph
+        plt.show() # show graph
+    
+    
 
 def main(args=None):
     
