@@ -1,0 +1,44 @@
+load("yolov2_vgg19_aug.mat")
+node1 = ros2node('node1')
+imgNode = ros2node("/tello_driver");
+imgSub = ros2subscriber(imgNode,"image_raw");
+dataPub = ros2publisher(node1,"/faces","std_msgs/String");
+dataMsg = ros2message(dataPub);
+pause(0.5)
+imgMsg = receive(imgSub,10);
+img = rosReadImage(imgMsg);
+p1 = imshow(img);
+
+while 1
+
+    pause(0.01);
+    imgMsg = receive(imgSub,10);
+    img = rosReadImage(imgMsg);
+    subImage = img(24:3:695, 32:4:927,:); %224x224x3 image
+    [boxes,scores,labels] = detect(detector,subImage);
+    if isempty(labels)
+        
+        for i = 1:numel(labels)
+        print(i)
+        faces.labels(i).boxes = boxes(i)
+        faces.labels(i).scores = scores(i)
+
+
+        faces.labels(i).boxes(:,1) = floor(faces.labels(i).boxes(:,1)*4.2);
+        faces.labels(i).boxes(:,2) = floor(faces.labels(i).boxes(:,2)*3.5);
+        faces.labels(i).boxes(:,3) = floor(faces.labels(i).boxes(:,3)*4);
+        faces.labels(i).boxes(:,4) = floor(faces.labels(i).boxes(:,4)*2.8);
+        end
+    
+end
+
+
+    faces_data = jsonencode(faces);
+    dataMsg.data = faces_data;
+    send(dataPub,dataMsg)
+
+    detectedI = insertObjectAnnotation(img,'Rectangle',faces.boxes,strcat(string(faces.labels),{' - '},num2str(face.scores)));
+    set(p1, 'CData', detectedI);
+
+    %subImage = img(24:3:695, 32:4:927,:); %224x224x3 image
+end
